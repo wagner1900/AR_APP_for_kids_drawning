@@ -2,11 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>Exemplo AR.js - Upload via Botão</title>
-  <!-- A-Frame principal -->
+  <title>AR.js - Cubo com Upload + Botão Ultra-Realista</title>
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <!-- AR.js para A-Frame -->
+  <!-- AR.js para A-Frame (marker-based) -->
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <!-- Componente de ambiente (iluminação avançada) -->
+  <script src="https://unpkg.com/aframe-environment-component@1.3.1/dist/aframe-environment-component.min.js"></script>
+
   <style>
     body, html {
       margin: 0;
@@ -29,23 +32,31 @@
   </style>
 </head>
 <body>
-  <!-- Painel de UI -->
+  <!-- Painel de interface -->
   <div id="ui-panel">
-    <button id="uploadBtn">Upload da Imagem</button>
-    <!-- Campo de upload oculto -->
+    <button id="uploadBtn">Upload do Desenho</button>
+    <!-- input hidden para selecionar o arquivo -->
     <input type="file" id="imgInput" accept="image/*" style="display:none;">
     
     <div style="margin-top: 10px;">
-      <label for="widthM">Largura (m):</label>
-      <input type="number" id="widthM" value="1" step="0.1" style="width:60px;">
-      
-      <label for="heightM">Altura (m):</label>
-      <input type="number" id="heightM" value="1" step="0.1" style="width:60px;">
-      
+      <label for="widthBox">Largura (m):</label>
+      <input type="number" id="widthBox" value="1" step="0.1" style="width:60px;">
+
+      <label for="heightBox">Altura (m):</label>
+      <input type="number" id="heightBox" value="1" step="0.1" style="width:60px;">
+
+      <label for="depthBox">Profundidade (m):</label>
+      <input type="number" id="depthBox" value="1" step="0.1" style="width:60px;">
+
       <button id="applyBtn">Aplicar Dimensões</button>
     </div>
+    <div style="margin-top:10px;">
+      <button id="ultraBtn">Modo Ultra-Realista!</button>
+    </div>
     <p style="margin: 5px 0 0;">
-      Aponte a câmera para o marcador Hiro e veja a imagem em AR.
+      Aponte a câmera para o marcador Hiro.<br>
+      Clique em "Upload do Desenho" para texturizar o cubo.<br>
+      Clique em "Modo Ultra-Realista!" para ativar/desativar o visual PBR.
     </p>
   </div>
 
@@ -56,80 +67,137 @@
     arjs="sourceType: webcam; debugUIEnabled: false;"
     renderer="logarithmicDepthBuffer: true;"
   >
-    <!-- Marcador Hiro (arquivo local "hiro.patt") -->
+    <!-- 
+      Adicionamos um 'environment' para simular céu, chão, iluminação, etc.
+      Começamos com "preset: none" (sem ambiente). Depois podemos ligar outro preset.
+    -->
+    <a-entity
+      id="envEntity"
+      environment="preset: none; skyType: gradient; ground: false;"
+    ></a-entity>
+
+    <!-- Marcador Hiro -->
     <a-marker type="pattern" url="hiro.patt">
-      <!-- Plano onde exibiremos a imagem carregada -->
-      <a-plane
-        id="userImage"
-        src=""
+      <!-- 
+        Cubo onde aplicaremos a textura via upload.
+        Inicia com material "basic" para ser mais leve. 
+        Depois trocaremos para "shader: standard" no modo Ultra-Realista.
+      -->
+      <a-box
+        id="boxObject"
+        material="shader: flat; src: ''; color: #ffffff;"
         width="1"
         height="1"
+        depth="1"
+        position="0 0.5 0"
         rotation="0 0 0"
-        position="0 0 0">
-      </a-plane>
+      >
+      </a-box>
 
-      <!-- Caixa representando um humano de 1,70m de altura -->
+      <!-- Humano de 1,70 m (caixa pink) -->
       <a-box
-        id="humano"
         color="#FFC0CB"
         width="0.3"
         height="1.7"
         depth="0.3"
-        position="1 0.85 0">
-      </a-box>
+        position="2 0.85 0"
+      ></a-box>
     </a-marker>
 
-    <!-- Câmera AR -->
     <a-entity camera></a-entity>
   </a-scene>
 
   <script>
-    // Referências a elementos da UI
+    // Referências de UI
     const uploadBtn = document.getElementById('uploadBtn');
     const imgInput = document.getElementById('imgInput');
-    const widthInput = document.getElementById('widthM');
-    const heightInput = document.getElementById('heightM');
     const applyBtn = document.getElementById('applyBtn');
+    const ultraBtn = document.getElementById('ultraBtn');
+
+    const widthBox = document.getElementById('widthBox');
+    const heightBox = document.getElementById('heightBox');
+    const depthBox = document.getElementById('depthBox');
 
     // Elementos A-Frame
-    const plane = document.querySelector('#userImage');
-    const human = document.querySelector('#humano');
+    const boxObject = document.querySelector('#boxObject');
+    const envEntity = document.querySelector('#envEntity');
 
-    // 1) Botão "Upload da Imagem"
-    //    Quando clicado, dispara o input escondido
+    // Modo Ultra-Realista (toggle)
+    let isUltra = false;
+
+    // 1) Botão "Upload do Desenho" -> dispara o input escondido
     uploadBtn.addEventListener('click', () => {
       imgInput.click();
     });
 
-    // 2) Ao selecionar arquivo, ler via FileReader e atribuir ao <a-plane>
-    imgInput.addEventListener('change', (event) => {
-      const file = event.target.files[0];
+    // 2) Quando seleciona arquivo, faz upload e define como textura
+    imgInput.addEventListener('change', (evt) => {
+      const file = evt.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
       reader.onload = (e) => {
-        plane.setAttribute('src', e.target.result);
-        console.log('Imagem carregada no plano.');
+        const dataURL = e.target.result;
+        // Atribui a textura ao cubo
+        // Se estivermos em modo Ultra, teremos "shader: standard"
+        // Se não, "shader: flat" (ou "basic")
+        boxObject.setAttribute('material', `src: ${dataURL}`);
+        console.log('Imagem aplicada como textura.');
       };
       reader.readAsDataURL(file);
     });
 
-    // 3) Aplicar dimensões (em metros)
+    // 3) "Aplicar Dimensões"
     applyBtn.addEventListener('click', () => {
-      const w = parseFloat(widthInput.value) || 1;
-      const h = parseFloat(heightInput.value) || 1;
+      const w = parseFloat(widthBox.value) || 1;
+      const h = parseFloat(heightBox.value) || 1;
+      const d = parseFloat(depthBox.value) || 1;
 
-      // Ajusta o tamanho do a-plane
-      plane.setAttribute('width', w);
-      plane.setAttribute('height', h);
+      boxObject.setAttribute('width', w);
+      boxObject.setAttribute('height', h);
+      boxObject.setAttribute('depth', d);
+      // Reposiciona para ficar apoiado no chão do marcador
+      boxObject.setAttribute('position', `0 ${h/2} 0`);
 
-      // Reposicionar o humano à direita, ex: x = (w + 0.3)
-      // Pega a pos atual do humano para manter y e z
-      const currentPos = human.getAttribute('position');
-      const newX = w + 0.3; // Se quiser: (w / 2) + 0.5, etc.
-      human.setAttribute('position', `${newX} ${currentPos.y} ${currentPos.z}`);
+      console.log(`Dimensões: ${w} x ${h} x ${d}`);
+    });
 
-      console.log(`Aplicadas dimensões: ${w}m x ${h}m`);
+    // 4) Botão "Modo Ultra-Realista!" -> alterna visual PBR e environment
+    ultraBtn.addEventListener('click', () => {
+      isUltra = !isUltra;
+
+      if (isUltra) {
+        // Ativar environment com um preset (ex. forest, tron, goldmine, etc.)
+        // Ajustar iluminação e sky
+        envEntity.setAttribute('environment', {
+          preset: 'forest',
+          ground: true,
+          groundColor: '#555',
+          skyType: 'gradient',
+          fog: 0
+        });
+
+        // Mudar material do cubo para "shader: standard"
+        // e colocar algumas propriedades PBR
+        // Ex.: metalness: 0.2, roughness: 0.4
+        boxObject.setAttribute('material', 'shader: standard; metalness: 0.2; roughness: 0.4;');
+
+        // Ajusta cor se quiser
+        // boxObject.setAttribute('material', 'color: #fff; ... ');
+
+        console.log('Ultra-Realista: ON');
+
+      } else {
+        // Voltar environment para "none"
+        envEntity.setAttribute('environment', 'preset: none; skyType: gradient; ground: false;');
+
+        // Voltar material para algo simples (flat ou basic)
+        // Mas manter a mesma "src" (textura)
+        const currentTex = boxObject.getAttribute('material').src || '';
+        boxObject.setAttribute('material', `shader: flat; src: ${currentTex}; color: #fff;`);
+
+        console.log('Ultra-Realista: OFF');
+      }
     });
   </script>
 </body>
