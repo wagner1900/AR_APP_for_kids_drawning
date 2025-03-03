@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Exemplo AR.js - Upload via Botão</title>
+  <!-- A-Frame principal -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <!-- AR.js para A-Frame -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    #ui-panel {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      padding: 10px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      z-index: 999;
+    }
+    #ui-panel * {
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Painel de UI -->
+  <div id="ui-panel">
+    <button id="uploadBtn">Upload da Imagem</button>
+    <!-- Campo de upload oculto -->
+    <input type="file" id="imgInput" accept="image/*" style="display:none;">
+    
+    <div style="margin-top: 10px;">
+      <label for="widthM">Largura (m):</label>
+      <input type="number" id="widthM" value="1" step="0.1" style="width:60px;">
+      
+      <label for="heightM">Altura (m):</label>
+      <input type="number" id="heightM" value="1" step="0.1" style="width:60px;">
+      
+      <button id="applyBtn">Aplicar Dimensões</button>
+    </div>
+    <p style="margin: 5px 0 0;">
+      Aponte a câmera para o marcador Hiro e veja a imagem em AR.
+    </p>
+  </div>
+
+  <!-- Cena AR.js -->
+  <a-scene
+    embedded
+    vr-mode-ui="enabled: false"
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+    renderer="logarithmicDepthBuffer: true;"
+  >
+    <!-- Marcador Hiro (arquivo local "hiro.patt") -->
+    <a-marker type="pattern" url="hiro.patt">
+      <!-- Plano onde exibiremos a imagem carregada -->
+      <a-plane
+        id="userImage"
+        src=""
+        width="1"
+        height="1"
+        rotation="0 0 0"
+        position="0 0 0">
+      </a-plane>
+
+      <!-- Caixa representando um humano de 1,70m de altura -->
+      <a-box
+        id="humano"
+        color="#FFC0CB"
+        width="0.3"
+        height="1.7"
+        depth="0.3"
+        position="1 0.85 0">
+      </a-box>
+    </a-marker>
+
+    <!-- Câmera AR -->
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    // Referências a elementos da UI
+    const uploadBtn = document.getElementById('uploadBtn');
+    const imgInput = document.getElementById('imgInput');
+    const widthInput = document.getElementById('widthM');
+    const heightInput = document.getElementById('heightM');
+    const applyBtn = document.getElementById('applyBtn');
+
+    // Elementos A-Frame
+    const plane = document.querySelector('#userImage');
+    const human = document.querySelector('#humano');
+
+    // 1) Botão "Upload da Imagem"
+    //    Quando clicado, dispara o input escondido
+    uploadBtn.addEventListener('click', () => {
+      imgInput.click();
+    });
+
+    // 2) Ao selecionar arquivo, ler via FileReader e atribuir ao <a-plane>
+    imgInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        plane.setAttribute('src', e.target.result);
+        console.log('Imagem carregada no plano.');
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // 3) Aplicar dimensões (em metros)
+    applyBtn.addEventListener('click', () => {
+      const w = parseFloat(widthInput.value) || 1;
+      const h = parseFloat(heightInput.value) || 1;
+
+      // Ajusta o tamanho do a-plane
+      plane.setAttribute('width', w);
+      plane.setAttribute('height', h);
+
+      // Reposicionar o humano à direita, ex: x = (w + 0.3)
+      // Pega a pos atual do humano para manter y e z
+      const currentPos = human.getAttribute('position');
+      const newX = w + 0.3; // Se quiser: (w / 2) + 0.5, etc.
+      human.setAttribute('position', `${newX} ${currentPos.y} ${currentPos.z}`);
+
+      console.log(`Aplicadas dimensões: ${w}m x ${h}m`);
+    });
+  </script>
+</body>
+</html>
