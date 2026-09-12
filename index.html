@@ -2,203 +2,218 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>AR.js - Cubo com Upload + Botão Ultra-Realista</title>
-  <!-- A-Frame -->
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <!-- AR.js para A-Frame (marker-based) -->
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <!-- Componente de ambiente (iluminação avançada) -->
-  <script src="https://unpkg.com/aframe-environment-component@1.3.1/dist/aframe-environment-component.min.js"></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff8e9">
+  <title>DinoTraço — Desenhe e descubra</title>
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
-    #ui-panel {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      padding: 10px;
-      background: rgba(0,0,0,0.6);
-      color: #fff;
-      z-index: 999;
-    }
-    #ui-panel * {
-      font-size: 16px;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@600;700;800&display=swap');
+
+    :root { --ink:#253b3a; --green:#18776b; --cream:#fff8e9; --yellow:#ffd15b; --orange:#ff8055; --card:#fffdf7; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; color:var(--ink); background:var(--cream); font-family:"Nunito",sans-serif; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.35; background-image:radial-gradient(#e5bc69 1px, transparent 1px); background-size:22px 22px; }
+    button { font:inherit; color:inherit; }
+    .topbar { height:80px; padding:0 clamp(20px,5vw,72px); display:flex; align-items:center; justify-content:space-between; background:#fffdf7e8; border-bottom:1px solid #eadfc9; position:relative; z-index:2; }
+    .brand { display:flex; gap:10px; align-items:center; font:800 25px/1 "Baloo 2",sans-serif; color:#155e55; }
+    .brand-mark { width:43px; height:43px; display:grid; place-items:center; border-radius:14px 14px 14px 5px; background:var(--green); color:white; font-size:24px; transform:rotate(-4deg); }
+    .header-badge { padding:8px 14px; border-radius:999px; background:#e4f6dc; color:#266534; font-size:13px; font-weight:800; }
+    main { position:relative; z-index:1; max-width:1220px; margin:auto; padding:36px 28px 50px; }
+    .intro { display:flex; align-items:end; justify-content:space-between; gap:24px; margin-bottom:25px; }
+    .eyebrow { display:inline-flex; gap:7px; align-items:center; margin:0 0 6px; color:#e25d36; font-size:13px; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+    h1 { margin:0; max-width:690px; font:800 clamp(34px,4.4vw,58px)/.98 "Baloo 2",sans-serif; letter-spacing:-.035em; }
+    h1 em { font-style:normal; color:var(--green); }
+    .intro-copy { max-width:310px; margin:0 0 4px; color:#60706c; font-size:15px; line-height:1.55; }
+    .workspace { display:grid; grid-template-columns:240px minmax(0,1fr); gap:20px; }
+    .panel { background:var(--card); border:1px solid #ebdfc7; border-radius:24px; box-shadow:0 12px 34px #70572513; }
+    .templates { padding:20px; }
+    .panel-title { display:flex; align-items:center; gap:9px; margin:0 0 14px; font:800 19px/1.2 "Baloo 2",sans-serif; }
+    .step { display:grid; place-items:center; width:25px; height:25px; border-radius:50%; background:var(--yellow); font:800 13px "Nunito"; }
+    .dino-list { display:grid; gap:10px; }
+    .dino-card { width:100%; display:grid; grid-template-columns:58px 1fr; align-items:center; text-align:left; gap:11px; padding:9px; border:2px solid transparent; border-radius:16px; background:#f7f1e4; cursor:pointer; transition:.18s ease; }
+    .dino-card:hover { transform:translateY(-2px); }
+    .dino-card.active { border-color:var(--green); background:#e7f5ed; box-shadow:0 4px 0 #18776b24; }
+    .dino-thumb { width:58px; height:52px; display:grid; place-items:center; border-radius:11px; font-size:33px; background:white; }
+    .dino-name { display:block; font:800 16px "Baloo 2"; }
+    .dino-era { display:block; color:#77817e; font-size:11px; font-weight:800; }
+    .tip { margin-top:18px; padding:14px; border-radius:15px; background:#fff3c9; color:#725d20; font-size:12px; line-height:1.45; }
+    .tip strong { display:block; margin-bottom:3px; color:#604b10; }
+    .studio { overflow:hidden; }
+    .studio-head { min-height:66px; display:flex; align-items:center; justify-content:space-between; gap:15px; padding:13px 18px; border-bottom:1px solid #ebdfc7; }
+    .current { display:flex; align-items:center; gap:10px; }
+    .current-icon { width:40px; height:40px; display:grid; place-items:center; border-radius:12px; background:#dff2e8; font-size:23px; }
+    .current small { display:block; color:#798582; font-size:11px; }
+    .current strong { font:800 17px "Baloo 2"; }
+    .tools { display:flex; align-items:center; gap:7px; flex-wrap:wrap; justify-content:flex-end; }
+    .colors { display:flex; gap:5px; padding-right:7px; border-right:1px solid #ded6c7; }
+    .color { width:28px; height:28px; border:3px solid white; border-radius:50%; background:var(--c); box-shadow:0 0 0 1px #d5cbb8; cursor:pointer; }
+    .color.active { box-shadow:0 0 0 3px var(--ink); transform:scale(.88); }
+    .tool-btn { height:34px; padding:0 10px; border:1px solid #ded4c1; border-radius:10px; background:white; cursor:pointer; font-size:12px; font-weight:800; }
+    .tool-btn.active { color:white; background:var(--ink); border-color:var(--ink); }
+    .canvas-wrap { position:relative; padding:18px; background:#f5eee1; }
+    canvas { display:block; width:100%; height:auto; max-height:58vh; aspect-ratio:760/500; border-radius:18px; background:white; box-shadow:0 6px 22px #5d482518; touch-action:none; cursor:crosshair; }
+    .canvas-note { position:absolute; left:32px; bottom:29px; pointer-events:none; padding:5px 10px; border-radius:8px; background:#ffffffd9; color:#9a9e9b; font-size:10px; font-weight:800; }
+    .studio-foot { padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px; border-top:1px solid #ebdfc7; }
+    .progress-text { color:#70807c; font-size:12px; line-height:1.4; }
+    .progress-text strong { display:block; color:var(--ink); font-size:13px; }
+    .finish { border:0; border-radius:14px; padding:12px 22px; background:var(--orange); color:white; font-weight:900; cursor:pointer; box-shadow:0 5px 0 #ce5935; transition:.15s; }
+    .finish:hover { transform:translateY(-2px); box-shadow:0 7px 0 #ce5935; }
+    dialog { width:min(650px,calc(100% - 32px)); padding:0; border:0; border-radius:28px; color:var(--ink); background:#fffdf8; box-shadow:0 30px 100px #142e2b66; }
+    dialog::backdrop { background:#183b37aa; backdrop-filter:blur(4px); }
+    .modal-art { min-height:205px; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; position:relative; background:linear-gradient(#bceaff 0 66%,#9ad182 66%); transition:background .4s; }
+    .modal-art.habitat-1 { background:linear-gradient(#c7edff 0 66%,#7fbd69 66%); }
+    .modal-art.habitat-2 { background:linear-gradient(#ffdca1 0 66%,#c9aa64 66%); }
+    .hill { position:absolute; bottom:-55px; width:360px; height:145px; border-radius:50%; background:#67ac68; }
+    .hill.one { left:-80px; }.hill.two { right:-100px; bottom:-70px; background:#82bf72; }
+    .sun { position:absolute; top:22px; right:34px; width:48px; height:48px; border-radius:50%; background:#ffd15b; box-shadow:0 0 0 10px #ffd15b33; animation:sunPulse 2s ease-in-out infinite; }
+    .cloud { position:absolute; top:32px; left:-95px; width:76px; height:25px; border-radius:20px; background:#fff; opacity:.9; animation:cloudTravel 9s linear infinite; }
+    .cloud::before,.cloud::after { content:""; position:absolute; bottom:4px; border-radius:50%; background:#fff; }
+    .cloud::before { left:13px; width:30px; height:30px; }.cloud::after { right:10px; width:22px; height:22px; }
+    .plant { position:absolute; z-index:2; bottom:15px; font-size:43px; transform-origin:bottom; animation:plantSway 2.2s ease-in-out infinite alternate; }
+    .plant.left { left:34px; }.plant.right { right:28px; animation-delay:-1s; }
+    .big-dino { position:relative; z-index:3; width:255px; height:165px; transform-origin:center bottom; animation:dinoWalk 2.2s ease-in-out infinite; filter:drop-shadow(0 9px 2px #315f4938); }
+    .big-dino svg { width:100%; height:100%; overflow:visible; }
+    .big-dino svg g { fill:#53a66f; stroke:#244541; stroke-width:8; stroke-linecap:round; stroke-linejoin:round; }
+    .big-dino svg circle { fill:#253b3a; }
+    .confetti { position:absolute; z-index:5; top:-18px; width:9px; height:15px; border-radius:3px; background:var(--confetti); animation:confettiFall var(--speed) ease-in forwards; animation-delay:var(--delay); }
+    @keyframes dinoWalk { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-9px) rotate(1deg)} }
+    @keyframes plantSway { from{transform:rotate(-5deg)} to{transform:rotate(6deg)} }
+    @keyframes sunPulse { 50%{transform:scale(1.1);box-shadow:0 0 0 17px #ffd15b20} }
+    @keyframes cloudTravel { to{left:110%} }
+    @keyframes confettiFall { 0%{transform:translateY(-10px) rotate(0);opacity:1} 100%{transform:translateY(245px) rotate(540deg);opacity:0} }
+    .modal-body.reveal { animation:storyReveal .5s .15s both; }
+    @keyframes storyReveal { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+    .modal-body { padding:25px 30px 28px; }
+    .done-tag { color:#dc5b36; font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+    dialog h2 { margin:5px 0 10px; font:800 31px/1.05 "Baloo 2"; }
+    .facts { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:18px 0; }
+    .fact { padding:13px; border-radius:14px; background:#f4efe3; font-size:13px; line-height:1.45; }
+    .fact strong { display:block; margin-bottom:3px; color:var(--green); }
+    .life { margin:0; color:#53635f; font-size:14px; line-height:1.65; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:22px; }
+    .modal-actions button { padding:10px 16px; border-radius:11px; border:1px solid #d9ceba; background:white; font-weight:800; cursor:pointer; }
+    .modal-actions .next { border-color:var(--green); background:var(--green); color:white; }
+    @media(max-width:800px){ .intro{align-items:start;flex-direction:column}.intro-copy{max-width:600px}.workspace{grid-template-columns:1fr}.templates{padding:15px}.dino-list{grid-template-columns:repeat(3,1fr)}.dino-card{grid-template-columns:1fr;text-align:center}.dino-thumb{margin:auto}.tip{display:none}.studio-head{align-items:flex-start;flex-direction:column}.tools{justify-content:flex-start}.canvas-wrap{padding:10px}.canvas-note{display:none} }
+    @media(max-width:520px){ main{padding:24px 12px}.header-badge{display:none}.dino-card{padding:6px}.dino-era{display:none}.studio-foot{align-items:stretch;flex-direction:column}.finish{width:100%}.facts{grid-template-columns:1fr}.modal-body{padding:22px}.modal-art{min-height:180px}.big-dino{width:210px;height:140px} }
+    @media(prefers-reduced-motion:reduce){ .big-dino,.plant,.sun,.cloud,.confetti,.modal-body.reveal{animation:none!important} }
   </style>
 </head>
 <body>
-  <!-- Painel de interface -->
-  <div id="ui-panel">
-    <button id="uploadBtn">Upload do Desenho</button>
-    <!-- input hidden para selecionar o arquivo -->
-    <input type="file" id="imgInput" accept="image/*" style="display:none;">
-    
-    <div style="margin-top: 10px;">
-      <label for="widthBox">Largura (m):</label>
-      <input type="number" id="widthBox" value="1" step="0.1" style="width:60px;">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">◕</span> DinoTraço</div>
+    <span class="header-badge">🌿 Aprender brincando</span>
+  </header>
 
-      <label for="heightBox">Altura (m):</label>
-      <input type="number" id="heightBox" value="1" step="0.1" style="width:60px;">
+  <main>
+    <section class="intro">
+      <div><p class="eyebrow">✦ Clube dos pequenos paleontólogos</p><h1>Desenhe, pinte e <em>viaje no tempo!</em></h1></div>
+      <p class="intro-copy">Escolha um dinossauro, solte a imaginação e descubra como ele vivia há milhões de anos.</p>
+    </section>
 
-      <label for="depthBox">Profundidade (m):</label>
-      <input type="number" id="depthBox" value="1" step="0.1" style="width:60px;">
+    <section class="workspace">
+      <aside class="panel templates">
+        <h2 class="panel-title"><span class="step">1</span> Escolha seu dino</h2>
+        <div class="dino-list" id="dinoList"></div>
+        <div class="tip"><strong>💡 Dica de artista</strong>Contorne as linhas e depois use cores bem alegres. Não existe cor errada!</div>
+      </aside>
 
-      <button id="applyBtn">Aplicar Dimensões</button>
+      <section class="panel studio">
+        <div class="studio-head">
+          <div class="current"><span class="current-icon" id="currentIcon">🦕</span><span><small>Você está desenhando</small><strong id="currentName">Braquiossauro</strong></span></div>
+          <div class="tools" aria-label="Ferramentas de desenho">
+            <div class="colors" id="colors"></div>
+            <button class="tool-btn active" id="pencilBtn" type="button">✎ Lápis</button>
+            <button class="tool-btn" id="eraserBtn" type="button">◇ Borracha</button>
+            <button class="tool-btn" id="clearBtn" type="button">↻ Limpar</button>
+          </div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="drawingCanvas" width="760" height="500" aria-label="Área para desenhar e colorir o dinossauro"></canvas>
+          <span class="canvas-note">DESENHE COM O MOUSE OU COM O DEDO</span>
+        </div>
+        <div class="studio-foot">
+          <span class="progress-text"><strong>Quando sua obra estiver pronta...</strong>Uma descoberta jurássica espera por você!</span>
+          <button class="finish" id="finishBtn" type="button">Finalizei meu desenho! ✨</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="factDialog">
+    <div class="modal-art" id="modalArt" aria-label="Dinossauro passeando em seu habitat">
+      <span class="sun"></span><span class="cloud"></span><span class="hill one"></span><span class="hill two"></span>
+      <span class="plant left">🌿</span><span class="plant right">🌴</span><span class="big-dino" id="modalDino" aria-hidden="true"></span>
     </div>
-    <div style="margin-top:10px;">
-      <button id="ultraBtn">Modo Ultra-Realista!</button>
+    <div class="modal-body">
+      <span class="done-tag">★ Missão cumprida!</span>
+      <h2 id="modalTitle">Conheça o Braquiossauro</h2>
+      <p class="life" id="modalIntro"></p>
+      <div class="facts"><div class="fact"><strong>🌎 Onde vivia?</strong><span id="habitat"></span></div><div class="fact"><strong>🥗 Como era sua vida?</strong><span id="lifestyle"></span></div></div>
+      <p class="life" id="curiosity"></p>
+      <div class="modal-actions"><button id="closeDialog" type="button">Continuar pintando</button><button class="next" id="nextDino" type="button">Desenhar outro dino →</button></div>
     </div>
-    <p style="margin: 5px 0 0;">
-      Aponte a câmera para o marcador Hiro.<br>
-      Clique em "Upload do Desenho" para texturizar o cubo.<br>
-      Clique em "Modo Ultra-Realista!" para ativar/desativar o visual PBR.
-    </p>
-  </div>
-
-  <!-- Cena AR.js -->
-  <a-scene
-    embedded
-    vr-mode-ui="enabled: false"
-    arjs="sourceType: webcam; debugUIEnabled: false;"
-    renderer="logarithmicDepthBuffer: true;"
-  >
-    <!-- 
-      Adicionamos um 'environment' para simular céu, chão, iluminação, etc.
-      Começamos com "preset: none" (sem ambiente). Depois podemos ligar outro preset.
-    -->
-    <a-entity
-      id="envEntity"
-      environment="preset: none; skyType: gradient; ground: false;"
-    ></a-entity>
-
-    <!-- Marcador Hiro -->
-    <a-marker type="pattern" url="hiro.patt">
-      <!-- 
-        Cubo onde aplicaremos a textura via upload.
-        Inicia com material "basic" para ser mais leve. 
-        Depois trocaremos para "shader: standard" no modo Ultra-Realista.
-      -->
-      <a-box
-        id="boxObject"
-        material="shader: flat; src: ''; color: #ffffff;"
-        width="1"
-        height="1"
-        depth="1"
-        position="0 0.5 0"
-        rotation="0 0 0"
-      >
-      </a-box>
-
-      <!-- Humano de 1,70 m (caixa pink) -->
-      <a-box
-        color="#FFC0CB"
-        width="0.3"
-        height="1.7"
-        depth="0.3"
-        position="2 0.85 0"
-      ></a-box>
-    </a-marker>
-
-    <a-entity camera></a-entity>
-  </a-scene>
+  </dialog>
 
   <script>
-    // Referências de UI
-    const uploadBtn = document.getElementById('uploadBtn');
-    const imgInput = document.getElementById('imgInput');
-    const applyBtn = document.getElementById('applyBtn');
-    const ultraBtn = document.getElementById('ultraBtn');
+    const dinosaurs = [
+      { name:'Braquiossauro', era:'Jurássico', icon:'🦕', plants:['🌿','🌴'], habitat:'Planícies com rios e florestas abertas, onde havia árvores bem altas.', lifestyle:'Era herbívoro e vivia em grupos. Seu pescoço longo alcançava folhas que outros animais não conseguiam.', intro:'Um gigante tranquilo caminhava pela América do Norte há cerca de 150 milhões de anos.', curiosity:'🔎 Ele podia ter mais de 20 metros de comprimento — quase o tamanho de duas quadras de vôlei!' },
+      { name:'Tricerátops', era:'Cretáceo', icon:'🌿', plants:['🌱','🌳'], habitat:'Campos e florestas da América do Norte, com muitas plantas rasteiras.', lifestyle:'Comia folhas, brotos e plantas duras. Seus três chifres ajudavam na defesa e na comunicação.', intro:'O Tricerátops viveu há cerca de 68 milhões de anos e tinha uma grande gola óssea protegendo o pescoço.', curiosity:'🔎 Seu nome significa “rosto com três chifres”. Ele usava um bico forte para cortar plantas!' },
+      { name:'Estegossauro', era:'Jurássico', icon:'🦖', plants:['🌾','🌵'], habitat:'Regiões de vegetação baixa e clima com estações secas, perto de rios.', lifestyle:'Era herbívoro, andava sobre quatro patas e usava os espinhos da cauda para se proteger.', intro:'As grandes placas nas costas faziam do Estegossauro um dos dinossauros mais fáceis de reconhecer.', curiosity:'🔎 Cientistas acreditam que suas placas ajudavam a controlar a temperatura do corpo e também a chamar atenção.' }
+    ];
+    const colors = ['#243f3c','#ef5d45','#f6b833','#2b9b77','#3d82d1','#8a5ccc'];
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d');
+    let selected = 0, color = colors[0], drawing = false, erasing = false;
 
-    const widthBox = document.getElementById('widthBox');
-    const heightBox = document.getElementById('heightBox');
-    const depthBox = document.getElementById('depthBox');
+    const paths = [
+      `<path d="M94 349 Q107 290 166 280 Q206 270 258 289 Q293 301 323 271 Q350 241 372 174 Q391 109 437 82 Q476 59 506 84 Q526 104 502 125 Q480 143 469 178 L460 285 Q515 296 574 322 Q625 344 669 339 Q694 336 699 357 Q700 379 661 389 Q602 404 532 374 L475 354 L477 424 M402 296 L386 421 M238 306 L221 421 M159 300 L141 419"/><path d="M125 419 H174 M202 421 H249 M362 423 H411 M453 425 H499"/><circle cx="477" cy="101" r="5" fill="#253b3a"/>`,
+      `<path d="M108 359 Q120 302 181 286 Q249 266 324 298 Q368 313 410 296 L449 266 Q481 242 525 248 L574 268 L636 254 L606 289 Q639 315 632 343 Q623 373 570 368 L499 357 Q464 367 419 370 L401 423 M323 356 L305 423 M190 326 L169 422 M128 346 L108 405"/><path d="M149 423 H191 M282 424 H327 M379 425 H422 M582 285 L620 314 M566 278 L579 240 M546 275 L536 232"/><circle cx="588" cy="313" r="5" fill="#253b3a"/>`,
+      `<path d="M91 354 Q117 313 170 303 Q232 289 285 302 Q342 311 397 300 Q455 287 510 306 Q550 322 588 345 L660 340 L614 374 Q560 386 500 363 L441 359 L426 422 M352 355 L337 422 M225 347 L210 422 M146 337 L129 419"/><path d="M185 301 L211 251 L242 298 L278 233 L308 302 L351 235 L374 303 L420 252 L435 306 M130 420 H231 M316 423 H445 M601 349 L622 313 M610 356 L645 381"/><circle cx="542" cy="329" r="5" fill="#253b3a"/>`
+    ];
 
-    // Elementos A-Frame
-    const boxObject = document.querySelector('#boxObject');
-    const envEntity = document.querySelector('#envEntity');
-
-    // Modo Ultra-Realista (toggle)
-    let isUltra = false;
-
-    // 1) Botão "Upload do Desenho" -> dispara o input escondido
-    uploadBtn.addEventListener('click', () => {
-      imgInput.click();
-    });
-
-    // 2) Quando seleciona arquivo, faz upload e define como textura
-    imgInput.addEventListener('change', (evt) => {
-      const file = evt.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataURL = e.target.result;
-        // Atribui a textura ao cubo
-        // Se estivermos em modo Ultra, teremos "shader: standard"
-        // Se não, "shader: flat" (ou "basic")
-        boxObject.setAttribute('material', `src: ${dataURL}`);
-        console.log('Imagem aplicada como textura.');
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // 3) "Aplicar Dimensões"
-    applyBtn.addEventListener('click', () => {
-      const w = parseFloat(widthBox.value) || 1;
-      const h = parseFloat(heightBox.value) || 1;
-      const d = parseFloat(depthBox.value) || 1;
-
-      boxObject.setAttribute('width', w);
-      boxObject.setAttribute('height', h);
-      boxObject.setAttribute('depth', d);
-      // Reposiciona para ficar apoiado no chão do marcador
-      boxObject.setAttribute('position', `0 ${h/2} 0`);
-
-      console.log(`Dimensões: ${w} x ${h} x ${d}`);
-    });
-
-    // 4) Botão "Modo Ultra-Realista!" -> alterna visual PBR e environment
-    ultraBtn.addEventListener('click', () => {
-      isUltra = !isUltra;
-
-      if (isUltra) {
-        // Ativar environment com um preset (ex. forest, tron, goldmine, etc.)
-        // Ajustar iluminação e sky
-        envEntity.setAttribute('environment', {
-          preset: 'forest',
-          ground: true,
-          groundColor: '#555',
-          skyType: 'gradient',
-          fog: 0
-        });
-
-        // Mudar material do cubo para "shader: standard"
-        // e colocar algumas propriedades PBR
-        // Ex.: metalness: 0.2, roughness: 0.4
-        boxObject.setAttribute('material', 'shader: standard; metalness: 0.2; roughness: 0.4;');
-
-        // Ajusta cor se quiser
-        // boxObject.setAttribute('material', 'color: #fff; ... ');
-
-        console.log('Ultra-Realista: ON');
-
-      } else {
-        // Voltar environment para "none"
-        envEntity.setAttribute('environment', 'preset: none; skyType: gradient; ground: false;');
-
-        // Voltar material para algo simples (flat ou basic)
-        // Mas manter a mesma "src" (textura)
-        const currentTex = boxObject.getAttribute('material').src || '';
-        boxObject.setAttribute('material', `shader: flat; src: ${currentTex}; color: #fff;`);
-
-        console.log('Ultra-Realista: OFF');
+    function drawTemplate() {
+      ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#fffdf8'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#f0eadc'; ctx.beginPath(); ctx.ellipse(385,432,310,25,0,0,Math.PI*2); ctx.fill();
+      const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="760" height="500" viewBox="0 0 760 500"><g fill="white" stroke="#253b3a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">${paths[selected]}</g></svg>`;
+      const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0); img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+    }
+    function renderChoices(){ document.getElementById('dinoList').innerHTML=dinosaurs.map((d,i)=>`<button type="button" class="dino-card ${i===selected?'active':''}" data-index="${i}"><span class="dino-thumb">${d.icon}</span><span><span class="dino-name">${d.name}</span><span class="dino-era">Período ${d.era}</span></span></button>`).join(''); }
+    function selectDino(i){ selected=i; const d=dinosaurs[i]; renderChoices(); document.getElementById('currentIcon').textContent=d.icon; document.getElementById('currentName').textContent=d.name; drawTemplate(); }
+    function renderColors(){ document.getElementById('colors').innerHTML=colors.map((c,i)=>`<button type="button" class="color ${i===0?'active':''}" style="--c:${c}" data-color="${c}" aria-label="Cor ${i+1}"></button>`).join(''); }
+    function point(e){ const r=canvas.getBoundingClientRect(), t=e.touches?.[0]||e; return {x:(t.clientX-r.left)*canvas.width/r.width,y:(t.clientY-r.top)*canvas.height/r.height}; }
+    function start(e){ e.preventDefault(); drawing=true; const p=point(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }
+    function move(e){ if(!drawing)return; e.preventDefault(); const p=point(e); ctx.lineWidth=erasing?28:8; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle=erasing?'#fffdf8':color; ctx.lineTo(p.x,p.y); ctx.stroke(); }
+    function stop(){ drawing=false; ctx.closePath(); }
+    document.getElementById('dinoList').addEventListener('click',e=>{const b=e.target.closest('[data-index]');if(b)selectDino(+b.dataset.index)});
+    document.getElementById('colors').addEventListener('click',e=>{const b=e.target.closest('[data-color]');if(!b)return;color=b.dataset.color;erasing=false;document.querySelectorAll('.color').forEach(x=>x.classList.toggle('active',x===b));document.getElementById('pencilBtn').classList.add('active');document.getElementById('eraserBtn').classList.remove('active')});
+    document.getElementById('pencilBtn').onclick=()=>{erasing=false;document.getElementById('pencilBtn').classList.add('active');document.getElementById('eraserBtn').classList.remove('active')};
+    document.getElementById('eraserBtn').onclick=()=>{erasing=true;document.getElementById('eraserBtn').classList.add('active');document.getElementById('pencilBtn').classList.remove('active')};
+    document.getElementById('clearBtn').onclick=drawTemplate;
+    ['mousedown','touchstart'].forEach(x=>canvas.addEventListener(x,start,{passive:false})); ['mousemove','touchmove'].forEach(x=>canvas.addEventListener(x,move,{passive:false})); ['mouseup','mouseleave','touchend'].forEach(x=>canvas.addEventListener(x,stop));
+    const dialog=document.getElementById('factDialog');
+    function celebrate(){
+      const art=document.getElementById('modalArt');
+      art.querySelectorAll('.confetti').forEach(piece=>piece.remove());
+      const partyColors=['#ff8055','#ffd15b','#3d82d1','#8a5ccc','#2b9b77'];
+      for(let i=0;i<28;i++){
+        const piece=document.createElement('i'); piece.className='confetti';
+        piece.style.cssText=`left:${Math.random()*100}%;--confetti:${partyColors[i%partyColors.length]};--delay:${Math.random()*.65}s;--speed:${1.5+Math.random()*1.2}s`;
+        art.appendChild(piece);
       }
-    });
+    }
+    document.getElementById('finishBtn').onclick=()=>{
+      const d=dinosaurs[selected], art=document.getElementById('modalArt'), body=dialog.querySelector('.modal-body');
+      art.className=`modal-art habitat-${selected}`;
+      art.querySelector('.plant.left').textContent=d.plants[0]; art.querySelector('.plant.right').textContent=d.plants[1];
+      document.getElementById('modalDino').innerHTML=`<svg viewBox="60 45 650 400" role="img" aria-label="${d.name}"><g>${paths[selected]}</g></svg>`;
+      document.getElementById('modalTitle').textContent=`Conheça o ${d.name}`;
+      ['modalIntro','habitat','lifestyle','curiosity'].forEach(id=>document.getElementById(id).textContent=d[id==='modalIntro'?'intro':id]);
+      body.classList.remove('reveal'); void body.offsetWidth; body.classList.add('reveal');
+      dialog.showModal(); celebrate();
+    };
+    document.getElementById('closeDialog').onclick=()=>dialog.close();
+    document.getElementById('nextDino').onclick=()=>{dialog.close();selectDino((selected+1)%dinosaurs.length)};
+    dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
+    renderChoices(); renderColors(); drawTemplate();
   </script>
 </body>
 </html>
