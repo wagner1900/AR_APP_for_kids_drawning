@@ -59,10 +59,28 @@
     .finish:hover { transform:translateY(-2px); box-shadow:0 7px 0 #ce5935; }
     dialog { width:min(650px,calc(100% - 32px)); padding:0; border:0; border-radius:28px; color:var(--ink); background:#fffdf8; box-shadow:0 30px 100px #142e2b66; }
     dialog::backdrop { background:#183b37aa; backdrop-filter:blur(4px); }
-    .modal-art { min-height:150px; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; background:#d8efe5; }
-    .modal-art::before,.modal-art::after { content:""; position:absolute; bottom:-35px; width:230px; height:100px; border-radius:50%; background:#78ad79; }
-    .modal-art::before { left:-25px; }.modal-art::after { right:-45px; background:#94c689; }
-    .big-dino { position:relative; z-index:1; font-size:92px; filter:drop-shadow(0 8px 0 #315f4930); }
+    .modal-art { min-height:230px; overflow:hidden; position:relative; isolation:isolate; background:linear-gradient(#9de3f2 0 68%,#b8db79 68%); }
+    .sun { position:absolute; top:22px; right:48px; width:58px; height:58px; border-radius:50%; background:#ffe271; box-shadow:0 0 0 12px #ffe2713d; animation:sunPulse 2.2s ease-in-out infinite; }
+    .cloud { position:absolute; top:38px; left:-120px; width:92px; height:27px; border-radius:30px; background:#fff; opacity:.82; animation:cloudTrip 12s linear infinite; }
+    .cloud::before,.cloud::after { content:""; position:absolute; bottom:0; border-radius:50%; background:inherit; }
+    .cloud::before { left:17px; width:39px; height:39px; }.cloud::after { right:12px; width:31px; height:31px; }
+    .cloud.two { top:78px; animation-delay:-6s; animation-duration:16s; transform:scale(.68); }
+    .mountain { position:absolute; bottom:52px; width:0; height:0; border-left:145px solid transparent; border-right:145px solid transparent; border-bottom:135px solid #77a987; opacity:.7; }
+    .mountain.one { left:-75px }.mountain.two { right:-80px; border-bottom-color:#67977b; transform:scale(.85) }
+    .ground { position:absolute; z-index:1; left:-5%; bottom:-34px; width:110%; height:105px; border-radius:50% 50% 0 0; background:#65a85f; }
+    .plant { position:absolute; z-index:3; bottom:32px; font-size:42px; transform-origin:bottom; animation:plantSway 2.1s ease-in-out infinite alternate; }
+    .plant.left { left:24px }.plant.right { right:27px; animation-delay:-1s }
+    .dino-stage { position:absolute; z-index:4; inset:38px 70px 14px; display:grid; place-items:center; animation:dinoWalk 2.4s ease-in-out infinite; }
+    .big-dino { width:330px; max-width:80%; overflow:visible; filter:drop-shadow(0 10px 3px #315f4945); transform-origin:center bottom; animation:dinoBob .7s ease-in-out infinite alternate; }
+    .big-dino .eye { animation:blink 3.4s infinite; transform-origin:center; }
+    .confetti { position:absolute; z-index:8; top:-22px; left:var(--x); width:10px; height:18px; border-radius:3px; background:var(--color); animation:confettiFall var(--speed) ease-in var(--delay) forwards; }
+    @keyframes dinoWalk { 0%,100%{transform:translateX(-18px)} 50%{transform:translateX(18px)} }
+    @keyframes dinoBob { to{transform:translateY(-7px) rotate(1deg)} }
+    @keyframes blink { 0%,44%,50%,100%{transform:scaleY(1)} 47%{transform:scaleY(.08)} }
+    @keyframes plantSway { to{transform:rotate(8deg)} }
+    @keyframes sunPulse { 50%{transform:scale(1.1);box-shadow:0 0 0 19px #ffe27128} }
+    @keyframes cloudTrip { to{left:720px} }
+    @keyframes confettiFall { to{transform:translate(var(--drift),270px) rotate(540deg);opacity:.25} }
     .modal-body { padding:25px 30px 28px; }
     .done-tag { color:#dc5b36; font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
     dialog h2 { margin:5px 0 10px; font:800 31px/1.05 "Baloo 2"; }
@@ -74,7 +92,8 @@
     .modal-actions button { padding:10px 16px; border-radius:11px; border:1px solid #d9ceba; background:white; font-weight:800; cursor:pointer; }
     .modal-actions .next { border-color:var(--green); background:var(--green); color:white; }
     @media(max-width:800px){ .intro{align-items:start;flex-direction:column}.intro-copy{max-width:600px}.workspace{grid-template-columns:1fr}.templates{padding:15px}.dino-list{grid-template-columns:repeat(3,1fr)}.dino-card{grid-template-columns:1fr;text-align:center}.dino-thumb{margin:auto}.tip{display:none}.studio-head{align-items:flex-start;flex-direction:column}.tools{justify-content:flex-start}.canvas-wrap{padding:10px}.canvas-note{display:none} }
-    @media(max-width:520px){ main{padding:24px 12px}.header-badge{display:none}.dino-card{padding:6px}.dino-era{display:none}.studio-foot{align-items:stretch;flex-direction:column}.finish{width:100%}.facts{grid-template-columns:1fr}.modal-body{padding:22px} }
+    @media(max-width:520px){ main{padding:24px 12px}.header-badge{display:none}.dino-card{padding:6px}.dino-era{display:none}.studio-foot{align-items:stretch;flex-direction:column}.finish{width:100%}.facts{grid-template-columns:1fr}.modal-body{padding:22px}.dino-stage{inset:50px 15px 12px} }
+    @media(prefers-reduced-motion:reduce){ .sun,.cloud,.plant,.dino-stage,.big-dino,.big-dino .eye,.confetti{animation:none!important} }
   </style>
 </head>
 <body>
@@ -119,10 +138,10 @@
   </main>
 
   <dialog id="factDialog">
-    <div class="modal-art"><span class="big-dino" id="modalIcon">🦕</span></div>
+    <div class="modal-art" id="modalArt" aria-hidden="true"></div>
     <div class="modal-body">
       <span class="done-tag">★ Missão cumprida!</span>
-      <h2 id="modalTitle">Conheça o Braquiossauro</h2>
+      <h2 id="modalTitle">Seu Braquiossauro ganhou vida!</h2>
       <p class="life" id="modalIntro"></p>
       <div class="facts"><div class="fact"><strong>🌎 Onde vivia?</strong><span id="habitat"></span></div><div class="fact"><strong>🥗 Como era sua vida?</strong><span id="lifestyle"></span></div></div>
       <p class="life" id="curiosity"></p>
@@ -133,8 +152,8 @@
   <script>
     const dinosaurs = [
       { name:'Braquiossauro', era:'Jurássico', icon:'🦕', habitat:'Planícies com rios e florestas abertas, onde havia árvores bem altas.', lifestyle:'Era herbívoro e vivia em grupos. Seu pescoço longo alcançava folhas que outros animais não conseguiam.', intro:'Um gigante tranquilo caminhava pela América do Norte há cerca de 150 milhões de anos.', curiosity:'🔎 Ele podia ter mais de 20 metros de comprimento — quase o tamanho de duas quadras de vôlei!' },
-      { name:'Tricerátops', era:'Cretáceo', icon:'🌿', habitat:'Campos e florestas da América do Norte, com muitas plantas rasteiras.', lifestyle:'Comia folhas, brotos e plantas duras. Seus três chifres ajudavam na defesa e na comunicação.', intro:'O Tricerátops viveu há cerca de 68 milhões de anos e tinha uma grande gola óssea protegendo o pescoço.', curiosity:'🔎 Seu nome significa “rosto com três chifres”. Ele usava um bico forte para cortar plantas!' },
-      { name:'Estegossauro', era:'Jurássico', icon:'🦖', habitat:'Regiões de vegetação baixa e clima com estações secas, perto de rios.', lifestyle:'Era herbívoro, andava sobre quatro patas e usava os espinhos da cauda para se proteger.', intro:'As grandes placas nas costas faziam do Estegossauro um dos dinossauros mais fáceis de reconhecer.', curiosity:'🔎 Cientistas acreditam que suas placas ajudavam a controlar a temperatura do corpo e também a chamar atenção.' }
+      { name:'Tricerátops', era:'Cretáceo', icon:'🦏', habitat:'Campos e florestas da América do Norte, com muitas plantas rasteiras.', lifestyle:'Comia folhas, brotos e plantas duras. Seus três chifres ajudavam na defesa e na comunicação.', intro:'O Tricerátops viveu há cerca de 68 milhões de anos e tinha uma grande gola óssea protegendo o pescoço.', curiosity:'🔎 Seu nome significa “rosto com três chifres”. Ele usava um bico forte para cortar plantas!' },
+      { name:'Estegossauro', era:'Jurássico', icon:'🦕', habitat:'Regiões de vegetação baixa e clima com estações secas, perto de rios.', lifestyle:'Era herbívoro, andava sobre quatro patas e usava os espinhos da cauda para se proteger.', intro:'As grandes placas nas costas faziam do Estegossauro um dos dinossauros mais fáceis de reconhecer.', curiosity:'🔎 Cientistas acreditam que suas placas ajudavam a controlar a temperatura do corpo e também a chamar atenção.' }
     ];
     const colors = ['#243f3c','#ef5d45','#f6b833','#2b9b77','#3d82d1','#8a5ccc'];
     const canvas = document.getElementById('drawingCanvas');
@@ -153,6 +172,11 @@
       const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="760" height="500" viewBox="0 0 760 500"><g fill="white" stroke="#253b3a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">${paths[selected]}</g></svg>`;
       const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0); img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
     }
+    function celebrateDino() {
+      const modalArt=document.getElementById('modalArt');
+      const confetti=Array.from({length:24},(_,i)=>`<i class="confetti" style="--x:${(i*43)%100}%;--color:${colors[i%colors.length]};--delay:${(i%6)*.08}s;--speed:${1.5+(i%4)*.18}s;--drift:${(i%2?1:-1)*(12+i%5*7)}px"></i>`).join('');
+      modalArt.innerHTML=`<span class="sun"></span><span class="cloud"></span><span class="cloud two"></span><span class="mountain one"></span><span class="mountain two"></span><span class="ground"></span><span class="plant left">🌿</span><span class="plant right">🌴</span><span class="dino-stage"><svg class="big-dino" viewBox="70 55 650 390" role="img" aria-label="${dinosaurs[selected].name} animado"><g fill="${colors[(selected+1)%colors.length]}" stroke="#253b3a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">${paths[selected]}</g></svg></span>${confetti}`;
+    }
     function renderChoices(){ document.getElementById('dinoList').innerHTML=dinosaurs.map((d,i)=>`<button type="button" class="dino-card ${i===selected?'active':''}" data-index="${i}"><span class="dino-thumb">${d.icon}</span><span><span class="dino-name">${d.name}</span><span class="dino-era">Período ${d.era}</span></span></button>`).join(''); }
     function selectDino(i){ selected=i; const d=dinosaurs[i]; renderChoices(); document.getElementById('currentIcon').textContent=d.icon; document.getElementById('currentName').textContent=d.name; drawTemplate(); }
     function renderColors(){ document.getElementById('colors').innerHTML=colors.map((c,i)=>`<button type="button" class="color ${i===0?'active':''}" style="--c:${c}" data-color="${c}" aria-label="Cor ${i+1}"></button>`).join(''); }
@@ -167,7 +191,7 @@
     document.getElementById('clearBtn').onclick=drawTemplate;
     ['mousedown','touchstart'].forEach(x=>canvas.addEventListener(x,start,{passive:false})); ['mousemove','touchmove'].forEach(x=>canvas.addEventListener(x,move,{passive:false})); ['mouseup','mouseleave','touchend'].forEach(x=>canvas.addEventListener(x,stop));
     const dialog=document.getElementById('factDialog');
-    document.getElementById('finishBtn').onclick=()=>{ const d=dinosaurs[selected]; document.getElementById('modalIcon').textContent=d.icon; document.getElementById('modalTitle').textContent=`Conheça o ${d.name}`; ['modalIntro','habitat','lifestyle','curiosity'].forEach(id=>document.getElementById(id).textContent=d[id==='modalIntro'?'intro':id]); dialog.showModal(); };
+    document.getElementById('finishBtn').onclick=()=>{ const d=dinosaurs[selected]; celebrateDino(); document.getElementById('modalTitle').textContent=`Seu ${d.name} ganhou vida!`; ['modalIntro','habitat','lifestyle','curiosity'].forEach(id=>document.getElementById(id).textContent=d[id==='modalIntro'?'intro':id]); dialog.showModal(); };
     document.getElementById('closeDialog').onclick=()=>dialog.close();
     document.getElementById('nextDino').onclick=()=>{dialog.close();selectDino((selected+1)%dinosaurs.length)};
     dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
